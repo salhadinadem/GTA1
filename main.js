@@ -78,6 +78,7 @@ var X_OFFSET = 60;
 var Y_OFFSET = 0;
 var SCOPE_OF_TILES = [];
 var parkedCars;
+var personList;
 //BACKGROUND CODE ***********************************
 function Background(game) {
     this.game = game;
@@ -351,6 +352,7 @@ Background.prototype.update = function () {
 };
 
 function PlayGame(game, x, y) {
+    this.game = game;
     Entity.call(this, game, x, y);
 }
 
@@ -379,9 +381,12 @@ PlayGame.prototype.draw = function (ctx) {
             ctx.fillText("You can walk or use a near by car to find the yellow lamborghini.",
             this.x-200, this.y+160);
         }
+        
+
         else {
+            console.log(this.game.running);
             ctx.fillText("Game Over Man!", this.x-30, this.y);
-            ctx.fillText("You are not a good thief and play again.", this.x-60, this.y);
+            ctx.fillText("You are not a good thief and play again.", this.x, this.y-60);
         }
     }
 }
@@ -572,6 +577,93 @@ Person.prototype.setNotIt = function () {
     this.it = false;
 };
 
+function Person1(game,x,y,an,tiles,distanceToTravel) {
+    this.game = game;
+    this.animation = new Animation(ASSET_MANAGER.getAsset("./img/RedPersonStanding.png"), 0, 0, 250, 250, 0.05, 1, true, true);
+    this.straightAnimation = new Animation(ASSET_MANAGER.getAsset("./img/Red Person.png"), 0, 0, 250, 250, 0.08, 7, true, true);
+    this.setNotIt();
+    this.speed = 0;
+    this.angle = an;
+    this.tiles = tiles;
+    this.distanceToTravel = distanceToTravel;
+    this.facing = an;
+    this.x2 = x;
+    this.y2 = y;
+    this.startX = x;
+    this.startY = y;
+    this.gameCoordX;
+    this.gameCoordY;
+    Entity.call(this, game, x, y);
+}
+
+Person1.prototype = new Entity();
+Person1.prototype.constructor = Person1;
+
+Person1.prototype.update = function () {
+    this.speed =5;
+    this.gameCoordX = this.x2 + (PASSEDMAPS.LCount * 9217);
+    this.gameCoordY = this.y2 + (PASSEDMAPS.HCount * 4502);
+
+    var travelX = (this.speed) * Math.cos(Math.PI / 180 * this.angle);
+    var travelY = (this.speed) * Math.sin(Math.PI / 180 * this.angle);
+    this.x2 +=travelX;
+    this.y2 += travelY;
+    if(this.facing ===0 || this.facing ===180){
+        if(this.facing ===0){
+            if(this.x2 >= this.distanceToTravel + this.startX){
+                this.angle =180;
+            } if(this.x2 <= this.startX){
+                this.angle = 0;
+            }
+        } else{
+            if(this.x2 <= this.startX - this.distanceToTravel){
+                this.angle = 0;
+            } if(this.x2 >= this.startX){
+                this.angle =180;
+            }
+        }
+    } else{
+        if (this.facing == 90) {
+            if(this.y2 >= this.distanceToTravel + this.startY){
+                this.angle =270;
+            } if(this.y2 <= this.startY){
+                this.angle = 90;
+            }
+        } else  {
+            if(this.y2 <= this.startY -this.distanceToTravel ){
+                this.angle = 90;
+            } if(this.y2 >= this.startY){
+                this.angle =270;
+            }
+        }
+    }
+
+    Entity.prototype.update.call(this,this.gameCoordX - X_OFFSET, this.gameCoordY-Y_OFFSET);
+}
+
+Person1.prototype.draw = function (ctx) {
+    for (var i = 0; i < this.tiles.length; i++) {
+        for (var j = 0; j < SCOPE_OF_TILES.length; j++) {
+            var c = SCOPE_OF_TILES[j].col;
+            var r = SCOPE_OF_TILES[j].row;
+           if (r == this.tiles[i].row && c == this.tiles[i].col) {
+            this.straightAnimation.drawFrame(this.game.clockTick, ctx, this.gameCoordX-X_OFFSET, this.gameCoordY-Y_OFFSET, this.angle);
+          }
+    
+      } 
+    }
+   //this.straightAnimation.drawFrame(this.game.clockTick, ctx, this.x-X_OFFSET, this.y-Y_OFFSET, this.angle);
+    Entity.prototype.draw.call(this);
+}
+
+Person1.prototype.setIt = function () {
+    this.it = true;
+};
+
+Person1.prototype.setNotIt = function () {
+    this.it = false;
+};
+
 //*************************
 
 //*************************
@@ -616,7 +708,7 @@ function Car(game,x,y) {
 
 Car.prototype = new Entity();
 Car.prototype.constructor = Car;
-Car.prototype.update = function () {
+Car.prototype.update = function (ctx) {
     if (this.it) {
 
     
@@ -675,8 +767,16 @@ Car.prototype.update = function () {
         this.setNotIt();
     
     }
+    //console.log(this.collide);
 }
     
+
+//if(this.car.src ==="file:///Users/adems/Desktop/MASK-master%205/img/lambo.png"){
+    if(this.collide>6){
+        
+    console.log(" did you win?");
+    
+    }
     Entity.prototype.update.call(this);
 }
 Car.prototype.canPass = function (X,Y,tilePaths) {
@@ -705,7 +805,7 @@ Car.prototype.canPass = function (X,Y,tilePaths) {
                 break;
         }
     }
-    return canPass;
+    return true;
 }
 Car.prototype.draw = function (ctx) {
     
@@ -781,9 +881,16 @@ Car.prototype.draw = function (ctx) {
         
 
     }
-
+    console.log("X: ",this.x," Y: ",this.y)
+    var win = new Image();
+    win.src = "./img/win.png";
     ctx.save();
     ctx.translate(this.x - X_OFFSET, this.y - Y_OFFSET); //*************
+    if(this.collide>6){
+        ctx.drawImage(win, -(win.width / 2), -(win.height / 2));
+    }
+    
+
     ctx.rotate(Math.PI / 180 * this.angle);
     ctx.drawImage(this.car, -(this.car.width / 2), -(this.car.height / 2));
     ctx.restore();
@@ -1085,6 +1192,7 @@ ASSET_MANAGER.queueDownload("./img/astonMartin.png"); // 270
 ASSET_MANAGER.queueDownload("./img/lightBlueAudi.png"); // 270
 ASSET_MANAGER.queueDownload("./img/Red Person.png"); // 0 
 ASSET_MANAGER.queueDownload("./img/RedPersonStanding.png"); 
+ASSET_MANAGER.queueDownload("./img/win.png"); 
 
 ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
@@ -1100,6 +1208,8 @@ ASSET_MANAGER.downloadAll(function () {
     gameEngine.running = false;
     var person = new Person(gameEngine);
     var pg = new PlayGame(gameEngine, 320, 350);
+    //var person1 = new Person1(gameEngine,1823,514,0,[{row:0, col:2},{row:0, col:3}],2760);
+    //var person1 = new Person1(gameEngine,1823,514,90,[{row:0, col:2},{row:1, col:2}],-1700);
 
     person.setIt();
     var car = new Car(gameEngine);
@@ -1111,6 +1221,10 @@ ASSET_MANAGER.downloadAll(function () {
     //********************
     //game,x,y,spritesheet,tile
     //var car1 =new Car2(gameEngine, 590, 788,"./img/mercedes.png", {row:0, col:1},116,54, 0);
+    personList = [new Person1(gameEngine,1823,514,0,[{row:0, col:2},{row:0, col:3}],2750),
+                new Person1(gameEngine,4580,490,180,[{row:0, col:2},{row:0, col:3}],2750),
+                new Person1(gameEngine,1823,514,90,[{row:0, col:2},{row:1, col:2}],1000),
+                new Person1(gameEngine,1830,1500,270,[{row:0, col:2},{row:1, col:2}],1000)];
 
     parkedCars = [
         new Car2(gameEngine, 590, 788,ASSET_MANAGER.getAsset("./img/mercedes.png"), {row:0, col:1},116,54, 0),
@@ -1151,8 +1265,12 @@ ASSET_MANAGER.downloadAll(function () {
      gameEngine.addEntity(car); 
      gameEngine.addEntity(pg);
 
-    gameEngine.addEntity(person); 
-
+    gameEngine.addEntity(person);
+    for (var i = 0; i < personList.length; i++ ) {
+        gameEngine.addEntity(personList[i]);
+       
+} 
+    //gameEngine.addEntity(person1);
     // gameEngine.addEntity();
     
 
