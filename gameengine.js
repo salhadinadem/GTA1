@@ -58,31 +58,20 @@ GameEngine.prototype.start = function () {
     })();
 }
 
+GameEngine.prototype.reset = function () {
+}
+
 GameEngine.prototype.startInput = function () {
     console.log('Starting input');
-    
-    var getXandY = function (e) {
-        var x = e.clientX - that.ctx.canvas.getBoundingClientRect().left;
-        var y = e.clientY - that.ctx.canvas.getBoundingClientRect().top;
-
-        if (x < 1024) {
-            x = Math.floor(x / 32);
-            y = Math.floor(y / 32);
-        }
-
-        return { x: x, y: y };
-    }
-
-
     var that = this;
 
-    this.ctx.canvas.addEventListener("click", function (e) {
-        that.click = getXandY(e);
-    }, false);
+    //this.ctx.canvas.addEventListener("click", function (e) {
+    //    that.click = getXandY(e);
+    //}, false);
 
-    this.ctx.canvas.addEventListener("mousemove", function (e) {
-        that.mouse = getXandY(e);
-    }, false);
+    //this.ctx.canvas.addEventListener("mousemove", function (e) {
+    //    that.mouse = getXandY(e);
+    //}, false);
 
     this.ctx.canvas.addEventListener("mouseleave", function (e) {
         that.mouse = null;
@@ -108,6 +97,9 @@ GameEngine.prototype.startInput = function () {
         } else if (e.code === "KeyW" || e.code === "ArrowUp") {
             that.w = true;
             
+        }else if (e.code === "Enter") {
+            that.enter = true;
+            
         }
         //        console.log(e);
         e.preventDefault();
@@ -116,21 +108,24 @@ GameEngine.prototype.startInput = function () {
 
 
 
-         this.ctx.canvas.addEventListener("keyup", function (e) {
-            if (String.fromCharCode(e.which) === ' ') {
-                that.space = false;
-            }   else if (e.code === "KeyD" || e.code === "ArrowRight"){
-                 that.d = false;
-             } else if (e.code === "KeyS"||e.code === "ArrowDown"){
-                 that.s = false;
-             } else if (e.code === "KeyA"||e.code === "ArrowLeft"){
-                 that.a = false;
-             } else if (e.code === "KeyW"||e.code === "ArrowUp"){
-                 that.w = false;
-             }
-     //        console.log(e);
-             e.preventDefault();
-         }, false);
+    this.ctx.canvas.addEventListener("keyup", function (e) {
+    if (String.fromCharCode(e.which) === ' ') {
+        that.space = false;
+    }   else if (e.code === "KeyD" || e.code === "ArrowRight"){
+            that.d = false;
+        } else if (e.code === "KeyS"||e.code === "ArrowDown"){
+            that.s = false;
+        } else if (e.code === "KeyA"||e.code === "ArrowLeft"){
+            that.a = false;
+        } else if (e.code === "KeyW"||e.code === "ArrowUp"){
+            that.w = false;
+        }else if (e.code === "Enter") {
+            that.enter = false;
+            
+        }
+//        console.log(e);
+        e.preventDefault();
+    }, false);
 
 
     console.log('Input started');
@@ -141,14 +136,11 @@ GameEngine.prototype.addEntity = function (entity) {
     this.entities.push(entity);
 }
 
-GameEngine.prototype.draw = function (drawCallback) {
+GameEngine.prototype.draw = function () {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.ctx.save();
     for (var i = 0; i < this.entities.length; i++) {
         this.entities[i].draw(this.ctx);
-    }
-    if (drawCallback) {
-        drawCallback(this);
     }
     this.ctx.restore();
 }
@@ -176,7 +168,10 @@ GameEngine.prototype.loop = function () {
     this.update();
     this.draw();
     this.space = null;
-    
+    this.enter = null;
+    this.click = null;
+    this.wheel = null;
+    this.over = null;
 }
 
 function Entity(game, x, y) {
